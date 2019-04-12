@@ -1,0 +1,46 @@
+<div class="container">
+  <h1>Vamos começar um novo jogo da Forca!</h1>
+  <p>Informe seu jogo inicial</p>
+  <hr />
+  <form [formGroup]="fg">
+    <div class="form-group">
+      <label for="">Palavra Secreta</label>
+      <input
+        class="form-control"
+        type="text"
+        id="palavra"
+        formControlName="palavra"
+        placeholder="Informe a palavra secreta"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="totalJogadas">Total de Jogadas</label>
+      <input
+        class="form-control"
+        type="text"
+        id="totalJogadas"
+        formControlName="quantidadeDeJogadas"
+        placeholder="Quantidade de tentativas. Ex: 12"
+      />
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <button
+          type="submit"
+          id="submitNewGame"
+          (click)="submit()"
+          class="btn btn-primary"
+        >
+          Começar
+        </button>
+      </div>
+      <div class="col-md-6" [hidden]="!response.status">
+        <div class="alert alert-{{ response.status }}" role="alert">
+          {{ response.mensagem }}
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

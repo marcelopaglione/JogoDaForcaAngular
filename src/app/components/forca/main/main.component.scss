@@ -1,0 +1,18 @@
+.palavra {
+  display: flex;
+  justify-content: center;
+  font-family: 'Montserrat';
+
+  background: #fff8e1;
+  border: dashed 1px #adad00;
+  border-radius: 10px;
+  margin: 30px 0;
+
+  .letra {
+    padding: 10px;
+    font-size: 50px;
+    font-weight: bold;
+    width: 70px;
+  }
+}
+

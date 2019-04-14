@@ -35,7 +35,7 @@ export class NovoJogoComponent implements OnInit {
             if (data.status === 201) {
               this.setResponse({status: 'success', message: 'Vamos começar!'});
               this.reloadPage();
-              // this.navigateToHome();
+              this.navigateToHome();
             }
           },
           err => {

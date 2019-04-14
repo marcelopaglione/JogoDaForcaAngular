@@ -24,17 +24,12 @@ describe('MenuComponent', () => {
     expect(component).toBeTruthy();
   });
 
-
   it('should render jogar link button', () => {
-    const fixture = TestBed.createComponent(MenuComponent);
-    fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('#jogar').textContent).toContain('Jogar');
   });
 
   it('should render novoJogo link button', () => {
-    const fixture = TestBed.createComponent(MenuComponent);
-    fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('#novoJogo').textContent).toContain('Novo Jogo');
   });

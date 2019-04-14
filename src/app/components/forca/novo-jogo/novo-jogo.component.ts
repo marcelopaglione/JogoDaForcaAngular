@@ -9,18 +9,14 @@ import { Router } from '@angular/router';
   styleUrls: ['./novo-jogo.component.scss']
 })
 export class NovoJogoComponent implements OnInit {
-
   constructor(
     private formBuilder: FormBuilder,
     private api: ApiforcaService,
     private router: Router
-    ) { }
+  ) {}
 
   fg: FormGroup;
-  response = {
-    mensagem: '',
-    status: ''
-  };
+  response = {mensagem: '', status: ''};
 
   ngOnInit() {
     this.fg = this.formBuilder.group({
@@ -29,30 +25,49 @@ export class NovoJogoComponent implements OnInit {
     });
   }
 
-  public submit() {
+  apiSet() { return this.api.set(this.fg.value); }
+  submit() {
     if (this.fg.valid) {
-      this.api.set(this.fg.value).subscribe(data => {
-        if (data.status === 201) {
-          this.initializePageData();
-          this.router.navigate(['/home']);
-        }
-      }, err => {
-        console.log(err);
-        if (err.status === 400) {
-          this.response.mensagem = 'Os valores informados estão inválidos, tente novamente!';
-          this.response.status = 'warning';
-        } else {
-          this.response.mensagem = err.error.message;
-          this.response.status = 'danger';
-        }
-      });
+        this.apiSet()
+        .toPromise()
+        .then(
+          data => {
+            if (data.status === 201) {
+              this.setResponse({status: 'success', message: 'Vamos começar!'});
+              this.reloadPage();
+              // this.navigateToHome();
+            }
+          },
+          err => {
+            err.status === 400 ?
+            this.setResponse({status: 'warning', message: 'Os valores informados estão inválidos, tente novamente!'}) :
+            this.setResponse({status: 'danger', message: 'err.error.message'});
+          }
+        );
     } else {
-      console.log('Invalid boleto form: ' + JSON.stringify(this.fg.value));
+      this.setResponse({status: 'warning', message: 'Novo jogo inválido, tente novamente'});
     }
   }
 
-  initializePageData() {
-    this.fg.reset();
+  navigateToHome() {
+    this.router.navigate(['/home']);
   }
 
+  setResponse(event: {status: string; message: string}) {
+    console.log(event);
+    switch (event.status) {
+      case 'warning':
+        this.response.mensagem = event.message;
+        this.response.status = 'warning';
+        break;
+      default:
+        this.response.mensagem = event.message;
+        this.response.status = 'success';
+        break;
+    }
+  }
+
+  reloadPage() {
+    this.fg.reset();
+  }
 }

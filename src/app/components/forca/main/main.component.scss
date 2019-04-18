@@ -16,3 +16,36 @@
   }
 }
 
+.hide{
+  display: none;
+}
+
+$x: 14.28571427%;
+#cp-0 {
+  clip-path: polygon(0 0, $x 0, $x 100%, 0 100%);
+}
+@for $i from 0 through 7 {
+  #cp-#{$i} {
+    clip-path: polygon($x*$i 0, $x*($i + 1) 0, $x*($i + 1) 100%, $x*$i 100%);
+    transform: translateX(-$x*$i);
+  }
+}
+
+$constant: 14%;
+.clip1 { $x: 0%; $y: $constant + $x;
+  -webkit-clip-path: polygon(0 0, $x 0, $x 100%, $y 100%);
+  clip-path: polygon($x 0, $y 0, $y 100%, $x 100%);
+}
+
+$constant: $constant * 2;
+.clip2 { $x: $constant; $y: $constant + $x;
+  -webkit-clip-path: polygon(0 0, $x 0, $x 100%, $y 100%);
+  clip-path: polygon($x 0, $y 0, $y 100%, $x 100%);
+}
+
+$constant: $constant + $constant;
+.clip3 { $x: $constant; $y: $constant + $x;
+  -webkit-clip-path: polygon(0 0, $x 0, $x 100%, $y 100%);
+  clip-path: polygon($x 0, $y 0, $y 100%, $x 100%);
+}
+

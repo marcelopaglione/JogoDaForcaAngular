@@ -15,7 +15,8 @@ export class MainComponent implements OnInit {
   }
 
   gameStatus: string[];
-  tentativasRestantes: string;
+  imageSprint: number;
+  displayHangman;
   response = {
     mensagem: '',
     status: ''
@@ -26,15 +27,27 @@ export class MainComponent implements OnInit {
     this.reloadPage();
   }
 
+  showImageSpring(status: string) {
+    this.api.getTentativasRestantes().subscribe(data => {
+      console.log(data);
+      const tentativasRestantes = parseInt(data.body.status.split(' ')[3].trim(), 10);
+      const totalSprints = 6;
+      tentativasRestantes > totalSprints ? this.imageSprint = 0 : this.imageSprint = totalSprints - tentativasRestantes;
+      tentativasRestantes >= 7 ? this.displayHangman = false : this.displayHangman = true;
+      if (status.endsWith('Fim de jogo, você perdeu!')) {
+        this.imageSprint = 6;
+      }
+      console.log('tentativas restantes: ', tentativasRestantes);
+      console.log('show image sprint: ', this.imageSprint);
+      });
+  }
+
   apiGetJogoStatus() {return this.api.getStatus(); }
   getJogoStatus() {
-    console.log('status called');
     this.apiGetJogoStatus()
       .toPromise()
       .then(data => {
-        console.log('get jogo status');
         this.gameStatus = data.body.status.split(' ');
-        console.log(this.gameStatus);
       });
   }
 
@@ -44,6 +57,7 @@ export class MainComponent implements OnInit {
       this.apiSubmit()
         .toPromise()
         .then(data => {
+            this.showImageSpring(data.body.mensagem);
             this.setResponse({status: data.status.toString() === '200' ? 'success' : 'warning', message: data.body.mensagem});
             this.reloadPage();
           },
@@ -79,7 +93,6 @@ export class MainComponent implements OnInit {
   }
 
   reloadPage() {
-    console.log('reloadPage called');
     this.fg = this.formBuilder.group({
       letra: [null, [Validators.required, Validators.minLength(1), Validators.maxLength(1)]]
     });

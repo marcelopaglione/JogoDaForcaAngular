@@ -1,7 +1,11 @@
 <div class="container">
   <h1>Vamos Jogar Forca</h1>
+
   <div class="row">
-    <div class="col-md-12">
+    <div class="col-md-2">
+        <img id="cp-{{imageSprint}}" src="assets/hangman.png" alt="hangman" [ngClass]="{'hide': !displayHangman}"><br>
+    </div>
+    <div [ngClass]="{'col-md-12': !displayHangman, 'col-md-10': displayHangman}">
       <div class="palavra col-md-12">
         <div class="letra" *ngFor="let item of gameStatus">
           {{ item }}

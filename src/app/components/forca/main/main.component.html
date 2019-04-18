@@ -1,34 +1,35 @@
-
 <div class="container">
-  <h1 >Vamos Jogar Forca</h1>
+  <h1>Vamos Jogar Forca</h1>
   <div class="row">
     <div class="col-md-12">
-        <div class="palavra col-md-12">
-            <div class="letra" *ngFor="let item of gameStatus;let i = index">{{item}}</div>
-          </div>
-          <div class="tentativas col-md-2 alert alert-warning" style="display: none">
-            {{tentativasRestantes}}
-          </div>
+      <div class="palavra col-md-12">
+        <div class="letra" *ngFor="let item of gameStatus">
+          {{ item }}
+        </div>
+      </div>
     </div>
-
   </div>
 
   <div class="row">
     <div class="col-md-6">
-        <form [formGroup]="fg">
-            <div class="form-group">
-              <input id="informarLetra" type="text" class="form-control" placeholder="Informe uma letra"  formControlName="letra">
-            </div>
-            <button (click)="submit()" class="btn btn-info">Enviar</button>
-          </form>
+      <form [formGroup]="fg">
+        <div class="form-group">
+          <input
+            id="informarLetra"
+            type="text"
+            class="form-control"
+            placeholder="Informe uma letra"
+            formControlName="letra"
+          />
+        </div>
+        <button (click)="submit()" class="btn btn-info">Enviar</button>
+      </form>
     </div>
 
     <div class="col-md-6" [hidden]="!response.status">
-        <div class="alert alert-{{response.status}}" role="alert">
-            {{response.mensagem}}
-        </div>
+      <div class="alert alert-{{ response.status }}" role="alert">
+        {{ response.mensagem }}
+      </div>
     </div>
-
   </div>
-
 </div>

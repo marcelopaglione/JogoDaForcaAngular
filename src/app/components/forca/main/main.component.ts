@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiforcaService } from 'src/app/services/apiforca.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { map, tap, concatMap } from 'rxjs/operators';
+import { Observable, combineLatest } from 'rxjs';
+import { Game, JogoStatus, Play } from 'src/app/entities';
 
 @Component({
   selector: 'app-main',
@@ -8,94 +11,93 @@ import { FormGroup, FormBuilder, Validators } from '@angular/forms';
   styleUrls: ['./main.component.scss']
 })
 export class MainComponent implements OnInit {
-  constructor(private api: ApiforcaService, private formBuilder: FormBuilder) {
-    this.fg = this.formBuilder.group({
-      letra: [null, [Validators.required, Validators.minLength(1), Validators.maxLength(1)]]
-    });
-  }
+  constructor(private api: ApiforcaService, private formBuilder: FormBuilder) {}
 
   gameStatus: string[];
   imageSprint: number;
-  displayHangman;
-  response = {
-    mensagem: '',
-    status: ''
-  };
+  displayHangman: boolean;
+  response = { mensagem: '', status: '' };
+  totalSprints = 6;
   fg: FormGroup;
 
   ngOnInit() {
-    this.reloadPage();
-  }
-
-  showImageSpring(status: string) {
-    this.api.getTentativasRestantes().subscribe(data => {
-      console.log(data);
-      const tentativasRestantes = parseInt(data.body.status.split(' ')[3].trim(), 10);
-      const totalSprints = 6;
-      tentativasRestantes > totalSprints ? this.imageSprint = 0 : this.imageSprint = totalSprints - tentativasRestantes;
-      tentativasRestantes >= 7 ? this.displayHangman = false : this.displayHangman = true;
-      if (status.endsWith('Fim de jogo, você perdeu!')) {
-        this.imageSprint = 6;
-      }
-      console.log('tentativas restantes: ', tentativasRestantes);
-      console.log('show image sprint: ', this.imageSprint);
-      });
-  }
-
-  apiGetJogoStatus() {return this.api.getStatus(); }
-  getJogoStatus() {
-    this.apiGetJogoStatus()
-      .toPromise()
-      .then(data => {
-        this.gameStatus = data.body.status.split(' ');
-      });
-  }
-
-  apiSubmit() { return this.api.play(this.fg.value); }
-  submit() {
-    if (this.fg.valid) {
-      this.apiSubmit()
-        .toPromise()
-        .then(data => {
-            this.showImageSpring(data.body.mensagem);
-            this.setResponse({status: data.status.toString() === '200' ? 'success' : 'warning', message: data.body.mensagem});
-            this.reloadPage();
-          },
-          err => {
-            this.setResponse({status: 'danger', message: err.error.message});
-          }
-        );
-    } else {
-      this.setResponse({status: 'warning', message: 'Letra informada está inválida'});
-    }
-  }
-
-  setResponse(event: {status: string; message: string}) {
-    console.log(event);
-    switch (event.status) {
-      case 'warning':
-        this.response.mensagem = event.message;
-        this.response.status = 'warning';
-        break;
-      case 'danger':
-        this.response.mensagem = event.message;
-        this.response.status = 'danger';
-        break;
-      case 'success':
-        this.response.mensagem = event.message;
-        this.response.status = 'success';
-        break;
-      default:
-        this.response.mensagem = event.message;
-        this.response.status = 'info';
-        break;
-    }
-  }
-
-  reloadPage() {
     this.fg = this.formBuilder.group({
       letra: [null, [Validators.required, Validators.minLength(1), Validators.maxLength(1)]]
     });
-    this.getJogoStatus();
+    this.getJogoStatus().toPromise();
   }
+
+  updateImageSpring(tentativasRestantes: number, status: string) {
+    tentativasRestantes > this.totalSprints
+      ? (this.imageSprint = 1)
+      : (this.imageSprint = this.totalSprints - tentativasRestantes);
+    this.displayHangman = true;
+    if (status.endsWith('Fim de jogo, você perdeu!')) {
+      this.imageSprint = 6;
+    }
+    console.log('updateImageSpring tentativas restantes: ', tentativasRestantes);
+    console.log('updateImageSpring show image sprint: ', this.imageSprint);
+  }
+
+  getJogoStatus(): Observable<string[]> {
+    return this.api.getStatus().pipe(
+      map(data => data.body),
+      map(data => data.status.trim()),
+      map(data => data.split(' ')),
+      map(data => {
+        this.gameStatus = data;
+        return data;
+      }),
+      tap(data => console.log('getJogoStatus', data)),
+    );
+  }
+
+  getTentativasRestantes(): Observable<number> {
+    return this.api.getTentativasRestantes().pipe(
+      map(data => data.body),
+      map(data => data),
+      map(data => parseInt(data.status, 10)),
+      map(data => data),
+      tap(data => console.log('getTentativasRestantes', data)),
+    );
+  }
+
+  refresh(p: Play): Observable<Game> {
+    return combineLatest(
+      this.getJogoStatus(),
+      this.getTentativasRestantes()
+    ).pipe(
+      map(([js, jt]) => ({ status: js, tentativas: jt, play: p})),
+      map((game) => this.updateImageSpring(game.tentativas, p.mensagem)),
+      tap(console.log)
+    );
+  }
+
+  submit() {
+    if (!this.fg.valid) {
+      this.setResponse({status: 'warning', message: 'Letra informada está inválida'});
+      return;
+    }
+    this.api
+      .play(this.fg.value)
+      .pipe(
+        tap(data => console.log(data)),
+        map(data => {
+          this.setResponse({ status: data.status.toString() === '200' ? 'success' : 'warning', message: data.body.mensagem });
+          return data.body;
+        }),
+        map(data => data ),
+        tap(data => console.log(data)),
+        concatMap(data => this.refresh(data)),
+      ).subscribe(() => {
+        this.fg.reset();
+      });
+
+  }
+
+  setResponse(event: { status: string; message: string }) {
+    this.response.mensagem = event.message;
+    this.response.status = event.status;
+  }
+
 }

@@ -1,51 +1,51 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, AfterViewChecked } from '@angular/core';
 import { ApiforcaService } from 'src/app/services/apiforca.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { map, tap, concatMap } from 'rxjs/operators';
 import { Observable, combineLatest } from 'rxjs';
-import { Game, JogoStatus, Play } from 'src/app/entities';
+import { Game, Play, Response } from 'src/app/entities';
 
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss']
 })
-export class MainComponent implements OnInit {
+export class MainComponent implements OnInit{
   constructor(private api: ApiforcaService, private formBuilder: FormBuilder) {}
 
-  gameStatus: string[];
+  palavraSecreta: string[];
   imageSprint: number;
   displayHangman: boolean;
-  response = { mensagem: '', status: '' };
+  response: Response;
   totalSprints = 6;
   fg: FormGroup;
+  @ViewChild('informarLetra') informarLetra: ElementRef;
 
   ngOnInit() {
     this.fg = this.formBuilder.group({
-      letra: [null, [Validators.required, Validators.minLength(1), Validators.maxLength(1)]]
+      letra: [null, Validators.compose([Validators.required, Validators.pattern('[a-zA-Z]')])]
     });
-    this.getJogoStatus().toPromise();
+    this.refresh().toPromise();
   }
 
-  updateImageSpring(tentativasRestantes: number, status: string) {
+  updateImageSpring(tentativasRestantes: number) {
     tentativasRestantes > this.totalSprints
-      ? (this.imageSprint = 1)
+      ? (this.imageSprint = 0)
       : (this.imageSprint = this.totalSprints - tentativasRestantes);
     this.displayHangman = true;
-    if (status.endsWith('Fim de jogo, você perdeu!')) {
+    if (tentativasRestantes === 1 && this.response.mensagem.includes('perdeu')) {
       this.imageSprint = 6;
     }
-    console.log('updateImageSpring tentativas restantes: ', tentativasRestantes);
-    console.log('updateImageSpring show image sprint: ', this.imageSprint);
+    this.reset();
   }
 
-  getJogoStatus(): Observable<string[]> {
+  getPalavraSecretaStatus(): Observable<string[]> {
     return this.api.getStatus().pipe(
       map(data => data.body),
       map(data => data.status.trim()),
       map(data => data.split(' ')),
       map(data => {
-        this.gameStatus = data;
+        this.palavraSecreta = data;
         return data;
       }),
       tap(data => console.log('getJogoStatus', data)),
@@ -62,20 +62,21 @@ export class MainComponent implements OnInit {
     );
   }
 
-  refresh(p: Play): Observable<Game> {
+  refresh(): Observable<Game> {
     return combineLatest(
-      this.getJogoStatus(),
+      this.getPalavraSecretaStatus(),
       this.getTentativasRestantes()
     ).pipe(
-      map(([js, jt]) => ({ status: js, tentativas: jt, play: p})),
-      map((game) => this.updateImageSpring(game.tentativas, p.mensagem)),
+      map(([palavraResponse, tentativasResponse]) => ({ status: palavraResponse, tentativas: tentativasResponse })),
+      map((game) => this.updateImageSpring(game.tentativas)),
       tap(console.log)
     );
   }
 
   submit() {
     if (!this.fg.valid) {
-      this.setResponse({status: 'warning', message: 'Letra informada está inválida'});
+      this.response = new Response(500, 'Letra informada está inválida');
+      this.reset();
       return;
     }
     this.api
@@ -83,21 +84,21 @@ export class MainComponent implements OnInit {
       .pipe(
         tap(data => console.log(data)),
         map(data => {
-          this.setResponse({ status: data.status.toString() === '200' ? 'success' : 'warning', message: data.body.mensagem });
+          this.response = new Response(data.status, data.body.mensagem);
           return data.body;
         }),
         map(data => data ),
         tap(data => console.log(data)),
-        concatMap(data => this.refresh(data)),
+        concatMap(() => this.refresh()),
       ).subscribe(() => {
-        this.fg.reset();
+
       });
 
   }
 
-  setResponse(event: { status: string; message: string }) {
-    this.response.mensagem = event.message;
-    this.response.status = event.status;
+  reset() {
+    this.fg.reset();
+    this.informarLetra.nativeElement.focus();
   }
 
 }

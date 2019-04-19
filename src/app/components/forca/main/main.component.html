@@ -7,7 +7,7 @@
     </div>
     <div [ngClass]="{'col-md-12': !displayHangman, 'col-md-10': displayHangman}">
       <div class="palavra col-md-12">
-        <div class="letra" *ngFor="let item of gameStatus">
+        <div class="letra" *ngFor="let item of palavraSecreta">
           {{ item }}
         </div>
       </div>
@@ -20,6 +20,7 @@
         <div class="form-group">
           <input
             id="informarLetra"
+            #informarLetra
             type="text"
             class="form-control"
             placeholder="Informe uma letra"
@@ -30,8 +31,8 @@
       </form>
     </div>
 
-    <div class="col-md-6" [hidden]="!response.status">
-      <div class="alert alert-{{ response.status }}" role="alert">
+    <div class="col-md-6" *ngIf="response">
+      <div class="alert alert-{{ response.statusMessage }}" role="alert">
         {{ response.mensagem }}
       </div>
     </div>
